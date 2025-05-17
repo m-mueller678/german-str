@@ -2,29 +2,12 @@ use crate::long_str::LongBStr;
 use crate::short_str::ShortBStr;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
-use std::mem;
-use std::mem::ManuallyDrop;
 use std::ops::Deref;
 
+#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct GermanBStr<'a>(BStrInner<'a>);
 pub use long_str::StrAllocator;
-
-impl Clone for GermanBStr<'_> {
-    fn clone(&self) -> Self {
-        unsafe {
-            if self.len() <= 12 {
-                GermanBStr(BStrInner {
-                    short: self.0.short,
-                })
-            } else {
-                GermanBStr(BStrInner {
-                    long: self.0.long.clone(),
-                })
-            }
-        }
-    }
-}
 
 impl Default for GermanBStr<'_> {
     fn default() -> Self {
@@ -37,11 +20,12 @@ mod bumpalo;
 mod long_str;
 mod short_str;
 
+#[derive(Clone, Copy)]
 #[repr(C)]
 union BStrInner<'a> {
     head: BStrHead,
     short: ShortBStr,
-    long: ManuallyDrop<LongBStr<'a>>,
+    long: LongBStr<'a>,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -89,7 +73,7 @@ macro_rules! define_constructor {
                 })
             } else {
                 GermanBStr(BStrInner {
-                    long: ManuallyDrop::new(LongBStr::$name(data)),
+                    long: LongBStr::$name(data),
                 })
             }
         }
@@ -99,19 +83,16 @@ macro_rules! define_constructor {
 impl<'a> GermanBStr<'a> {
     define_constructor!(new_static, &'static [u8]);
     define_constructor!(new_borrowed, &'a [u8]);
-    define_constructor!(new_boxed, &[u8]);
 
-    pub fn reallocate_borrowed<'b>(mut self, dst: impl StrAllocator<'b>) -> GermanBStr<'b> {
+    pub fn reallocate_borrowed<'b>(self, dst: impl StrAllocator<'b>) -> GermanBStr<'b> {
         unsafe {
             if self.len() <= 12 {
                 GermanBStr(BStrInner {
                     short: self.0.short,
                 })
             } else {
-                let long = ManuallyDrop::take(&mut self.0.long);
-                mem::forget(self);
                 GermanBStr(BStrInner {
-                    long: ManuallyDrop::new(long.reallocate_borrowed(dst)),
+                    long: self.0.long.reallocate_borrowed(dst),
                 })
             }
         }
@@ -143,13 +124,5 @@ impl Eq for GermanBStr<'_> {}
 impl Hash for GermanBStr<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.deref().hash(state)
-    }
-}
-
-impl Drop for GermanBStr<'_> {
-    fn drop(&mut self) {
-        if self.len() > 12 {
-            unsafe { ManuallyDrop::drop(&mut self.0.long) }
-        }
     }
 }

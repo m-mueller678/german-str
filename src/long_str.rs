@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
-use std::{mem, ptr, slice};
+use std::{mem, slice};
 
 /// # Safety
 /// Returned slice must have same length as input slice.
@@ -9,6 +9,7 @@ pub unsafe trait StrAllocator<'a> {
     fn allocate(self, data: &[u8]) -> &'a [u8];
 }
 
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct LongBStr<'a> {
     /// # Safety len >12
@@ -26,7 +27,6 @@ const CLASS_BIT_SHIFT: u32 = 64 - CLASS_BITS;
 enum Class {
     Borrowed,
     Static,
-    Owned,
 }
 
 impl<'a> LongBStr<'a> {
@@ -64,12 +64,6 @@ impl<'a> LongBStr<'a> {
         unsafe { Self::new(data, Class::Borrowed) }
     }
 
-    pub fn new_boxed(data: &[u8]) -> Self {
-        assert!(data.len() > 12);
-        let data = Box::into_raw(data.to_vec().into_boxed_slice());
-        unsafe { Self::new(data, Class::Owned) }
-    }
-
     pub fn reallocate_borrowed<'b>(self, dst: impl StrAllocator<'b>) -> LongBStr<'b> {
         match self.tag() {
             Class::Borrowed => {
@@ -80,23 +74,7 @@ impl<'a> LongBStr<'a> {
                     ..self
                 }
             }
-            Class::Owned | Class::Static => unsafe {
-                mem::transmute::<LongBStr<'a>, LongBStr<'b>>(self)
-            },
-        }
-    }
-}
-
-impl Drop for LongBStr<'_> {
-    fn drop(&mut self) {
-        match self.tag() {
-            Class::Borrowed | Class::Static => (),
-            Class::Owned => unsafe {
-                drop(Box::from_raw(ptr::slice_from_raw_parts_mut(
-                    self.ptr() as *mut u8,
-                    self.len as usize,
-                )));
-            },
+            Class::Static => unsafe { mem::transmute::<LongBStr<'a>, LongBStr<'b>>(self) },
         }
     }
 }
@@ -106,14 +84,5 @@ impl Deref for LongBStr<'_> {
 
     fn deref(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.ptr(), self.len as usize) }
-    }
-}
-
-impl Clone for LongBStr<'_> {
-    fn clone(&self) -> Self {
-        match self.tag() {
-            Class::Borrowed | Class::Static => LongBStr { ..*self },
-            Class::Owned => Self::new_boxed(self),
-        }
     }
 }
