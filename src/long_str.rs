@@ -3,8 +3,9 @@ use std::ops::Deref;
 use std::{mem, ptr, slice};
 
 /// # Safety
-/// returned slice must have same length as input slice.
+/// Returned slice must have same length as input slice.
 pub unsafe trait StrAllocator<'a> {
+    /// Allocates memory and copies contents
     fn allocate(self, data: &[u8]) -> &'a [u8];
 }
 

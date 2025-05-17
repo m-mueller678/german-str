@@ -1,4 +1,4 @@
-use crate::long_str::{LongBStr, StrAllocator};
+use crate::long_str::LongBStr;
 use crate::short_str::ShortBStr;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
@@ -8,6 +8,7 @@ use std::ops::Deref;
 
 #[repr(transparent)]
 pub struct GermanBStr<'a>(BStrInner<'a>);
+pub use long_str::StrAllocator;
 
 mod long_str;
 mod short_str;
