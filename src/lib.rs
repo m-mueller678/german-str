@@ -10,6 +10,8 @@ use std::ops::Deref;
 pub struct GermanBStr<'a>(BStrInner<'a>);
 pub use long_str::StrAllocator;
 
+#[cfg(feature = "bumpalo")]
+mod bumpalo;
 mod long_str;
 mod short_str;
 

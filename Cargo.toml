@@ -1,6 +1,6 @@
 [package]
 name = "german-str-borrow"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["m-mueller678"]
@@ -11,3 +11,4 @@ categories = ["data-structures"]
 keywords = ["string","umbra-string","german-string"]
 
 [dependencies]
+bumpalo = { version = "3.17.0" ,optional = true}
