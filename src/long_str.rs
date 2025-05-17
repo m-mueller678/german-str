@@ -108,3 +108,12 @@ impl Deref for LongBStr<'_> {
         unsafe { slice::from_raw_parts(self.ptr(), self.len as usize) }
     }
 }
+
+impl Clone for LongBStr<'_> {
+    fn clone(&self) -> Self {
+        match self.tag() {
+            Class::Borrowed | Class::Static => LongBStr { ..*self },
+            Class::Owned => Self::new_boxed(self),
+        }
+    }
+}

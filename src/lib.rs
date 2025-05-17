@@ -10,6 +10,28 @@ use std::ops::Deref;
 pub struct GermanBStr<'a>(BStrInner<'a>);
 pub use long_str::StrAllocator;
 
+impl Clone for GermanBStr<'_> {
+    fn clone(&self) -> Self {
+        unsafe {
+            if self.len() <= 12 {
+                GermanBStr(BStrInner {
+                    short: self.0.short,
+                })
+            } else {
+                GermanBStr(BStrInner {
+                    long: self.0.long.clone(),
+                })
+            }
+        }
+    }
+}
+
+impl Default for GermanBStr<'_> {
+    fn default() -> Self {
+        Self::new_static(&[])
+    }
+}
+
 #[cfg(feature = "bumpalo")]
 mod bumpalo;
 mod long_str;
