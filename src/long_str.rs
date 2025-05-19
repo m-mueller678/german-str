@@ -43,7 +43,7 @@ impl<'a> LongBStr<'a> {
     fn make_tag(x: *const u8, tag: Class) -> *const u8 {
         debug_assert!((tag as usize) < (1 << CLASS_BITS));
         x.map_addr(|x| {
-            assert_eq!(x >> CLASS_BITS, 0);
+            assert_eq!(x >> CLASS_BIT_SHIFT, 0);
             x | ((tag as usize) << CLASS_BIT_SHIFT)
         })
     }
