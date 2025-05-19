@@ -1,5 +1,6 @@
 use crate::long_str::LongBStr;
 use crate::short_str::ShortBStr;
+use bstr::BStr;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
@@ -54,13 +55,13 @@ impl GermanBStr<'_> {
 }
 
 impl Deref for GermanBStr<'_> {
-    type Target = [u8];
-    fn deref(&self) -> &[u8] {
-        if self.len() <= 12 {
-            unsafe { &self.0.short }
+    type Target = BStr;
+    fn deref(&self) -> &BStr {
+        BStr::new(if self.len() <= 12 {
+            unsafe { &*self.0.short }
         } else {
-            unsafe { &self.0.long }
-        }
+            unsafe { &*self.0.long }
+        })
     }
 }
 

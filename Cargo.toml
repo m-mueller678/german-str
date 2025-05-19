@@ -12,3 +12,4 @@ keywords = ["string","umbra-string","german-string"]
 
 [dependencies]
 bumpalo = { version = "3.17.0" ,optional = true}
+bstr = "1.12.0"
