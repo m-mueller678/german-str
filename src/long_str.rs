@@ -24,7 +24,7 @@ const CLASS_BIT_SHIFT: u32 = 64 - CLASS_BITS;
 
 #[derive(Clone, Copy)]
 #[repr(usize)]
-enum Class {
+pub(crate) enum Class {
     Borrowed,
     Static,
 }
@@ -48,7 +48,7 @@ impl<'a> LongBStr<'a> {
         })
     }
 
-    fn tag(&self) -> Class {
+    pub(crate) fn tag(&self) -> Class {
         unsafe { mem::transmute(self.content.addr() >> CLASS_BITS) }
     }
 

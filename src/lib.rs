@@ -1,7 +1,8 @@
-use crate::long_str::LongBStr;
+use crate::long_str::{Class, LongBStr};
 use crate::short_str::ShortBStr;
 use bstr::BStr;
 use std::cmp::Ordering;
+use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
@@ -57,11 +58,45 @@ impl GermanBStr<'_> {
 impl Deref for GermanBStr<'_> {
     type Target = BStr;
     fn deref(&self) -> &BStr {
-        BStr::new(if self.len() <= 12 {
-            unsafe { &*self.0.short }
+        self.as_ref()
+    }
+}
+
+impl AsRef<[u8]> for GermanBStr<'_> {
+    fn as_ref(&self) -> &[u8] {
+        if self.len() <= 12 {
+            unsafe { &self.0.short }
         } else {
-            unsafe { &*self.0.long }
-        })
+            unsafe { &self.0.long }
+        }
+    }
+}
+
+impl AsRef<BStr> for GermanBStr<'_> {
+    fn as_ref(&self) -> &BStr {
+        BStr::new(self)
+    }
+}
+
+impl Display for GermanBStr<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        <BStr as Display>::fmt(&**self, f)
+    }
+}
+
+impl Debug for GermanBStr<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let variant_label = if self.len() <= 12 {
+            "Short"
+        } else {
+            match unsafe { self.0.long.tag() } {
+                Class::Borrowed => "Borrowed",
+                Class::Static => "Static",
+            }
+        };
+        f.debug_tuple(variant_label)
+            .field(&BStr::new(self))
+            .finish()
     }
 }
 
