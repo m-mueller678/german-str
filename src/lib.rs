@@ -162,3 +162,31 @@ impl Hash for GermanBStr<'_> {
         self.deref().hash(state)
     }
 }
+
+#[cfg(feature = "bumpalo")]
+#[test]
+fn construct_eq() {
+    use ::bumpalo::Bump;
+    let static_str = b"abcdefghijklmnopqrstuvwxyzABCD";
+    let bump = Bump::new();
+    let bump2 = Bump::new();
+    let mut strings = Vec::new();
+    let mut strings2 = Vec::new();
+    for l in 0..30 {
+        let s = &static_str[..l];
+        let gb = GermanBStr::new_borrowed(s);
+        let gs = GermanBStr::new_static(s);
+        assert_eq!(gb, gs);
+        assert_eq!(*gb, s);
+        strings.push((gb.reallocate_borrowed(&bump), gs.reallocate_borrowed(&bump)));
+    }
+    for (b, s) in &strings {
+        assert_eq!(b, s);
+        strings2.push((b.reallocate_borrowed(&bump2), s.reallocate_borrowed(&bump2)));
+    }
+    drop(strings);
+    drop(bump);
+    for (b, s) in &strings2 {
+        assert_eq!(b, s);
+    }
+}
