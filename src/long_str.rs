@@ -49,7 +49,7 @@ impl<'a> LongBStr<'a> {
     }
 
     pub(crate) fn tag(&self) -> Class {
-        unsafe { mem::transmute(self.content.addr() >> CLASS_BITS) }
+        unsafe { mem::transmute(self.content.addr() >> CLASS_BIT_SHIFT) }
     }
 
     fn ptr(&self) -> *const u8 {
